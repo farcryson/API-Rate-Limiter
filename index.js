@@ -1,5 +1,6 @@
 import express from "express";
 import { createClient } from "redis";
+import axios from "axios";
 
 const app = express();
 const PORT = 3000;
@@ -17,7 +18,6 @@ console.log("✅ Connected to Redis");
 //sliding window 
 async function rateLimiter(req, res, next) {
         const ip = req.ip;
-        console.log(ip);
         const key = `rate_limit:${ip}`;
 
         const now = Date.now();
@@ -74,13 +74,29 @@ async function tokenBucket(req, res, next) {
 };
 
 
-// app.get('/', rateLimiter, (req, res) => {
-//     res.send('<h1> API is working! </h1>');
-// });
-
-app.get('/', tokenBucket, (req, res) => {
-    res.send('<h1> API is working! </h1>');
+app.get('/', rateLimiter, async (req, res) => {
+        try{
+            const response = await axios.get('http://localhost:8080');
+            return res.status(response.status).send(response.data);
+        }
+        catch(err) {
+            return res.status(502).send("Bad Gateway");
+        }
 });
+
+
+// app.get('/', tokenBucket, (req, res) => {
+//     async function getWebpage() {
+//         try {
+//             const response = await axios.get("http://localhost:8080");
+//             res.status(response.status).send(response.data);
+//         }
+//         catch(err) {
+//             return res.status(502).send("Bad Gateway");
+//         }
+//     }
+//     getWebpage();
+// });
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
