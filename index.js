@@ -4,6 +4,12 @@ import axios from "axios";
 
 const app = express();
 const PORT = 3000;
+const servers = [
+    "http://localhost:8080",
+    "http://localhost:8081",
+    "http://localhost:8082"
+]
+let reqCount = 0;
 
 // create redis client
 const client = createClient();
@@ -76,7 +82,8 @@ async function tokenBucket(req, res, next) {
 
 app.get('/', rateLimiter, async (req, res) => {
         try{
-            const response = await axios.get('http://localhost:8080');
+            const response = await axios.get(servers[reqCount%3]);
+            reqCount++;
             return res.status(response.status).send(response.data);
         }
         catch(err) {
